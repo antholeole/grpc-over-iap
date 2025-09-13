@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package example.v1;
+option go_package = "example/v1";
+
+message PingRequest {
+  int64 ping = 1;
+}
+
+message PingResponse {
+  int64 pong = 1;
+}
+
+service PingService {
+  rpc Ping(PingRequest) returns (PingResponse);
+}

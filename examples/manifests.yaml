@@ -1,0 +1,104 @@
+# prereq: you need config-connector setup.
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: <your project id>
+  name: grpc-iap-namespace
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/backend-config: '{"default": "iap-backend-config"}'
+  name: grpc-iap-service
+  namespace: grpc-iap-namespace
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 65535
+  selector:
+    app: grpc-iap-deployment
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-iap-deployment
+  namespace: grpc-iap-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-iap-deployment
+  template:
+    metadata:
+      labels:
+        app: grpc-iap-deployment
+    spec:
+      containers:
+        - args:
+            - -port=65535
+          image: my/grpc-service
+          name: my-grpc-service
+          ports:
+            - containerPort: 65535
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: grpc-iap-backend-config
+  namespace: grpc-iap-namespace
+spec:
+  iap:
+    # you might have to specify a secret name here, but afaict it correctly
+    # infers the project default.
+    enabled: true
+---
+apiVersion: compute.cnrm.cloud.google.com/v1beta1
+kind: ComputeAddress
+metadata:
+  name: grpc-iap-stable-ip
+  namespace: grpc-iap-namespace
+spec:
+  location: global
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: your-project-id
+  name: grpc-iap-dns
+  namespace: grpc-iap-namespace
+  # TODO: fill out your DNS record set.
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: grpc-iap-cert
+  namespace: grpc-iap-namespace
+spec:
+  domains:
+    - your-domain-from-dns
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: gce
+    kubernetes.io/ingress.global-static-ip-name: grpc-iap-stable-ip
+    networking.gke.io/managed-certificates: grpc-iap-cert
+  name: grpc-iap-ingress
+  namespace: grpc-iap-namespace
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: grpc-iap-service
+                port:
+                  number: 443
+            path: /*
+            pathType: ImplementationSpecific
