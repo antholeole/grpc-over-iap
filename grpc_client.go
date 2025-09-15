@@ -16,6 +16,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const tlsPort = 443
+
 // TODO: This JWT should probably be cached!
 func signJWTWithGcloudDefaultCredentials(serviceAccount, targetUrl string) (string, error) {
 	ctx := context.Background()
@@ -97,7 +99,7 @@ type BuildClientOpts struct {
 }
 
 func BuildClient(ctx context.Context, opts BuildClientOpts) (*grpc.ClientConn, context.Context, error) {
-	creds, err := getTLSCertificatesFromURL(opts.Url)
+	creds, err := getTLSCertificatesFromURL(fmt.Sprintf("%s:%d", opts.Url, tlsPort))
 	if err != nil {
 		return nil, nil, fmt.Errorf("err getting tls cert from url %s: %w", opts.Url, err)
 	}
