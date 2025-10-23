@@ -6,12 +6,6 @@ i.e. if you run admin tools from something like a laptop or GCE instance, IAP is
 
 If you use this star it on github! I'll be motivated to maintain this externally if I know people use it.
 
-
-> [!WARNING]  
-> Currently unstable - I wouldn't use this package until this warning is removed and the API is stabilized. This depends on an unreleased GCP feature at the moment.
->
-> Also, this makes a lot of assumptions about how you run your service; i.e. you're running behind port 443. I'm happy to accept PR's to remove these assumptions.
-
 ## Why is this hard?
 
 Many reasons.
