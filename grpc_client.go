@@ -96,12 +96,21 @@ type BuildClientOpts struct {
 	// using this user as the email. Should have "iap.httpsResourceAccessor"
 	// permissions
 	ServiceAccount string
+
+	// this field should only ever be set to true for debugging; all IAP
+	// is done over SSL. Setting this field can be used to point to a local,
+	// insure, url.
+	DisableSsl bool
 }
 
 func BuildClient(ctx context.Context, opts BuildClientOpts) (*grpc.ClientConn, context.Context, error) {
-	creds, err := getTLSCertificatesFromURL(fmt.Sprintf("%s:%d", opts.Url, tlsPort))
-	if err != nil {
-		return nil, nil, fmt.Errorf("err getting tls cert from url %s: %w", opts.Url, err)
+	var creds *tls.Config
+	var err error
+	if !opts.DisableSsl {
+		creds, err = getTLSCertificatesFromURL(fmt.Sprintf("%s:%d", opts.Url, tlsPort))
+		if err != nil {
+			return nil, nil, fmt.Errorf("err getting tls cert from url %s: %w", opts.Url, err)
+		}
 	}
 
 	dialOpts := []grpc.DialOption{
@@ -122,8 +131,6 @@ func BuildClient(ctx context.Context, opts BuildClientOpts) (*grpc.ClientConn, c
 
 	token, err := signJWTWithGcloudDefaultCredentials(
 		opts.ServiceAccount,
-		// wildcard api routes do not exist yet. but I have it on good authority
-		// that they will shortly.
 		fmt.Sprintf("https://%s/*", opts.Url),
 	)
 	if err != nil {
