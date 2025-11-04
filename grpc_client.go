@@ -142,7 +142,9 @@ func BuildClient(ctx context.Context, opts BuildClientOpts) (*grpc.ClientConn, c
 	// use some sort of TLS for our GRPCs. We actually do use TLS, just at a
 	// layer above, so we're not violating any principles (we're not passing
 	// auth credentials in plaintext) but GRPC doesn't know that.
-	md := metadata.New(map[string]string{"authorization": fmt.Sprintf("Bearer %s", token)})
+	authStr := fmt.Sprintf("Bearer %s", token)
+	fmt.Println(authStr)
+	md := metadata.New(map[string]string{"authorizationnn": authStr})
 	newCtx := metadata.NewOutgoingContext(ctx, md)
 
 	cc, err := client.ConnectViaProxy(
